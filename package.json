@@ -1,0 +1,39 @@
+{
+  "name": "kaboom",
+  "displayName": "Kaboom!",
+  "description": "Modify files and text selection by running custom scripts",
+  "version": "0.1.0",
+  "publisher": "aen",
+  "engines": {
+    "vscode": "^1.26.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:extension.replaceSelection"
+  ],
+  "main": "./out/extension",
+  "contributes": {
+    "commands": [
+      {
+        "command": "extension.replaceSelection",
+        "title": " 💥Kaboom!: Replace selected text with script output"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "postinstall": "node ./node_modules/vscode/bin/install",
+    "test": "npm run compile && node ./node_modules/vscode/bin/test"
+  },
+  "devDependencies": {
+    "@types/mocha": "5.2.5",
+    "@types/node": "10.9.2",
+    "tslint": "5.8.0",
+    "typescript": "3.0.1",
+    "vscode": "1.1.21"
+  }
+}
