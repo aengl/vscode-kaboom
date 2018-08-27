@@ -28,8 +28,10 @@ async function findScripts(): Promise<ScriptInfo[]> {
   return scripts;
 }
 
-function runScript(scriptPath: string, input: string) {
-  return child_process.execFileSync(scriptPath, [input]).toString();
+function runScript(scriptPath: string, input?: string) {
+  return child_process
+    .execFileSync(scriptPath, input ? [input] : undefined)
+    .toString();
 }
 
 async function quickPickScript(): Promise<ScriptInfo | null> {
@@ -47,8 +49,31 @@ async function quickPickScript(): Promise<ScriptInfo | null> {
     : null;
 }
 
+function runCommand(
+  command: string,
+  script: ScriptInfo,
+  editor: vscode.TextEditor,
+  edit: vscode.TextEditorEdit
+) {
+  switch (command) {
+    case 'insert': {
+      const result = runScript(script.path);
+      edit.insert(editor.selection.active, result);
+      break;
+    }
+    case 'replaceSelection': {
+      editor.selections.map(async selection => {
+        const text = editor.document.getText(selection);
+        const result = runScript(script.path, text);
+        edit.replace(selection, result);
+      });
+      break;
+    }
+  }
+}
+
 export function activate(context: vscode.ExtensionContext) {
-  ['replaceSelection']
+  ['insert', 'replaceSelection']
     .map(command =>
       vscode.commands.registerCommand(`extension.${command}`, async () => {
         const editor = vscode.window.activeTextEditor;
@@ -56,11 +81,7 @@ export function activate(context: vscode.ExtensionContext) {
           const script = await quickPickScript();
           if (script) {
             editor.edit(editBuilder => {
-              editor.selections.map(async selection => {
-                const text = editor.document.getText(selection);
-                const result = runScript(script.path, text);
-                editBuilder.replace(selection, result);
-              });
+              runCommand(command, script, editor, editBuilder);
             });
           }
         }

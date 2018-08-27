@@ -1,9 +1,9 @@
 {
   "name": "kaboom",
   "displayName": "Kaboom!",
-  "description": "Modify files and text selection by running custom scripts",
-  "version": "0.1.0",
-  "publisher": "aen",
+  "description": "Manipulate & insert text by running local scripts.",
+  "version": "0.2.0",
+  "publisher": "Cephea",
   "engines": {
     "vscode": "^1.26.0"
   },
@@ -11,14 +11,19 @@
     "Other"
   ],
   "activationEvents": [
+    "onCommand:extension.insert",
     "onCommand:extension.replaceSelection"
   ],
   "main": "./out/extension",
   "contributes": {
     "commands": [
       {
+        "command": "extension.insert",
+        "title": " 💥 Kaboom!: Insert"
+      },
+      {
         "command": "extension.replaceSelection",
-        "title": " 💥Kaboom!: Replace selected text with script output"
+        "title": " 💥 Kaboom!: Replace Selection"
       }
     ]
   },
