@@ -1,4 +1,5 @@
 import * as child_process from 'child_process';
+import * as executable from 'executable';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -11,27 +12,39 @@ interface ScriptInfo {
 }
 
 const readdir = util.promisify(fs.readdir);
+const stat = util.promisify(fs.stat);
 
 async function findScripts(): Promise<ScriptInfo[]> {
   const scripts: ScriptInfo[] = [];
   try {
     const homeDir = path.resolve(os.homedir(), '.vscode', 'kaboom');
-    (await readdir(homeDir)).forEach(script => {
+    (await readdir(homeDir)).forEach(name => {
+      const filePath = path.resolve(homeDir, name);
       scripts.push({
-        name: script,
-        path: path.resolve(homeDir, script),
+        name,
+        path: filePath,
       });
     });
   } catch (error) {
-    console.error(error);
+    vscode.window.showErrorMessage(error);
   }
-  return scripts;
+
+  // Only show files that have the `+x` flag
+  const scriptIsExecutable = await Promise.all(
+    scripts.map(script => executable(script.path))
+  );
+
+  return scripts.filter((script, i) => scriptIsExecutable[i]);
 }
 
 function runScript(scriptPath: string, input?: string) {
-  return child_process
-    .execFileSync(scriptPath, input ? [input] : undefined)
-    .toString();
+  try {
+    return child_process
+      .execFileSync(scriptPath, input ? [input] : undefined)
+      .toString();
+  } catch (error) {
+    vscode.window.showErrorMessage(error);
+  }
 }
 
 async function quickPickScript(): Promise<ScriptInfo | null> {
@@ -58,14 +71,18 @@ function runCommand(
   switch (command) {
     case 'insert': {
       const result = runScript(script.path);
-      edit.insert(editor.selection.active, result);
+      if (result) {
+        edit.insert(editor.selection.active, result);
+      }
       break;
     }
     case 'replaceSelection': {
       editor.selections.map(async selection => {
         const text = editor.document.getText(selection);
         const result = runScript(script.path, text);
-        edit.replace(selection, result);
+        if (result) {
+          edit.replace(selection, result);
+        }
       });
       break;
     }
